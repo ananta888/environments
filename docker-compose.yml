@@ -15,6 +15,7 @@ services:
       - /run
       - /var/tmp
 
+
     # cap_drop:
     #   - ALL
     security_opt:
@@ -24,12 +25,15 @@ services:
       - recon_net
 
   recon-ng:
-    image: ghcr.io/homebrew/core/recon-ng:5.1.2
+    build:
+      context: ./kali
+      dockerfile: Dockerfile
     container_name: recon-ng
     tty: true
     stdin_open: true
     restart: "no"
-    command: ["sh", "-lc", "sleep infinity"]
+    # ENTRYPOINT kommt aus dem Dockerfile: ["recon-ng"]
+    # (kein command nötig; du kannst beim "docker compose run" trotzdem Befehle anhängen)
 
     # alles Schreibbare in /data (Host-Volume)
     environment:
