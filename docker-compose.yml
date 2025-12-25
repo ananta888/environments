@@ -29,7 +29,7 @@ services:
     tty: true
     stdin_open: true
     restart: "no"
-    command: ["recon-ng"]
+    command: ["sh", "-lc", "sleep infinity"]
 
     # alles Schreibbare in /data (Host-Volume)
     environment:
