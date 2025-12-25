@@ -6,7 +6,7 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-COPY reconng-entrypoint.sh /usr/local/bin/reconng-entrypoint.sh
+COPY recon_ng_bootstrap.sh /usr/local/bin/reconng-entrypoint.sh
 RUN chmod +x /usr/local/bin/reconng-entrypoint.sh
 
 WORKDIR /data
