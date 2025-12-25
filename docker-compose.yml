@@ -4,16 +4,17 @@ services:
     container_name: torproxy
     restart: unless-stopped
 
-    # nur intern erreichbar (kein ports:), damit nicht versehentlich offen im LAN
     expose:
-      - "9050"   # SOCKS5
-      - "8118"   # HTTP (privoxy)
+      - "9050"
+      - "8118"
 
     read_only: true
     tmpfs:
       - /tmp
       - /run
       - /var/tmp
+      - /var/lib/tor
+      - /var/log
 
     cap_drop:
       - ALL
