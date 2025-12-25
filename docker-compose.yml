@@ -1,29 +1,4 @@
 services:
-  tor:
-    image: dperson/torproxy:latest
-    container_name: torproxy
-    restart: unless-stopped
-
-    # nur intern erreichbar (kein ports:), damit nicht versehentlich offen im LAN
-    expose:
-      - "9050"   # SOCKS5
-      - "8118"   # HTTP (privoxy)
-
-    # read_only: true
-    tmpfs:
-      - /tmp
-      - /run
-      - /var/tmp
-
-
-    # cap_drop:
-    #   - ALL
-    security_opt:
-      - no-new-privileges:true
-
-    networks:
-      - recon_net
-
   recon-ng:
     build:
       context: ./kali
@@ -35,19 +10,9 @@ services:
     # ENTRYPOINT kommt aus dem Dockerfile: ["recon-ng"]
     # (kein command nötig; du kannst beim "docker compose run" trotzdem Befehle anhängen)
 
-    # alles Schreibbare in /data (Host-Volume)
     environment:
       - HOME=/data
-      # Proxy über Tor (SOCKS; für Tools die SOCKS können)
-      - ALL_PROXY=socks5h://tor:9050
-      - all_proxy=socks5h://tor:9050
-      # Optional zusätzlich HTTP-Proxy (für Tools die nur HTTP Proxy können)
-      - HTTP_PROXY=http://tor:8118
-      - HTTPS_PROXY=http://tor:8118
-      - http_proxy=http://tor:8118
-      - https_proxy=http://tor:8118
 
-    # API-Keys optional aus .env (liegt neben docker-compose.yml)
     env_file:
       - .env
       - .env.secrets
@@ -67,12 +32,6 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-
-    depends_on:
-      - tor
-
-    networks:
-      - recon_net
 
 networks:
   recon_net:
