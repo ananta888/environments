@@ -111,10 +111,10 @@ def get_battery_info():
     
     raise RuntimeError(f"OS {system} nicht unterstützt.")
 
-def main(interval_sec=30):
+def main(interval_sec=5):
     if interval_sec < 5 or interval_sec > 60:
-        print(f"Warnung: Intervall {interval_sec}s liegt außerhalb von 5-60s. Setze auf Standard 30s.")
-        interval_sec = 30
+        print(f"Warnung: Intervall {interval_sec}s liegt außerhalb von 5-60s. Setze auf Standard 5s.")
+        interval_sec = 5
 
     curr_mwh, full_mwh, st, pct = get_battery_info()
     prev_mwh = curr_mwh
@@ -157,5 +157,5 @@ def main(interval_sec=30):
 
 if __name__ == "__main__":
     # Aufruf: python battery-check.py [Intervall in Sek]
-    interval = int(sys.argv[1]) if len(sys.argv) > 1 else 30
+    interval = int(sys.argv[1]) if len(sys.argv) > 1 else 5
     main(interval_sec=interval)
