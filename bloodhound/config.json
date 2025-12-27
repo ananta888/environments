@@ -1,0 +1,11 @@
+{
+    "database": {
+        "connection": "postgres://bloodhound:bloodhoundpassword@postgres:5432/bloodhound?sslmode=disable"
+    },
+    "neo4j": {
+        "connection": "neo4j://neo4j:password@neo4j:7687"
+    },
+    "crypto": {
+        "jwt_signing_key": "n8!2kd_92jks-02kj_92!kdlsa_0293js-d92j_sk2"
+    }
+}
