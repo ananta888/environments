@@ -1,1 +1,5 @@
 /.env.secrets
+/recon-ng-data/
+/neo4j/
+/postgres/
+/bloodhound/
