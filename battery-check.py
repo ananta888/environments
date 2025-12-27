@@ -2,7 +2,13 @@ import os, re, sys, time, subprocess, platform
 from datetime import datetime
 
 def run(cmd):
-    return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
+    try:
+        return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        output = e.output.strip() if e.output else str(e)
+        raise RuntimeError(f"Befehl '{' '.join(cmd)}' fehlgeschlagen: {output}") from None
+    except FileNotFoundError:
+        raise RuntimeError(f"Befehl '{cmd[0]}' nicht gefunden. Stellen Sie sicher, dass das Tool installiert ist.") from None
 
 def windows_full_charge_capacity_mwh():
     # generate report
@@ -111,21 +117,25 @@ def main(interval_sec=30, capacity_mwh=None):
 
     while True:
         time.sleep(interval_sec)
-        pct, st = battery_percent_and_status()
-        t = time.time()
+        try:
+            pct, st = battery_percent_and_status()
+            t = time.time()
 
-        dp = pct - prev_pct
-        dh = (t - prev_t) / 3600.0
+            dp = pct - prev_pct
+            dh = (t - prev_t) / 3600.0
 
-        ts = datetime.now().strftime("%H:%M:%S")
-        if dp != 0 and dh > 0:
-            delta_mwh = capacity_mwh * (dp / 100.0)
-            w = (delta_mwh / dh) / 1000.0
-            print(f"{ts}  {pct:3d}%  Δ{dp:+4d}%  ~ {w:7.2f} W  status={st}")
-        else:
-            print(f"{ts}  {pct:3d}%  (keine Änderung)  status={st}")
+            ts = datetime.now().strftime("%H:%M:%S")
+            if dp != 0 and dh > 0:
+                delta_mwh = capacity_mwh * (dp / 100.0)
+                w = (delta_mwh / dh) / 1000.0
+                print(f"{ts}  {pct:3d}%  Δ{dp:+4d}%  ~ {w:7.2f} W  status={st}")
+            else:
+                print(f"{ts}  {pct:3d}%  (keine Änderung)  status={st}")
 
-        prev_pct, prev_t = pct, t
+            prev_pct, prev_t = pct, t
+        except Exception as e:
+            ts = datetime.now().strftime("%H:%M:%S")
+            print(f"{ts}  Fehler beim Abrufen des Batteriestatus: {e}")
 
 if __name__ == "__main__":
     # optional: python battery_live.py 30 60000
