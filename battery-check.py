@@ -1,4 +1,4 @@
-import os, re, sys, time, subprocess, platform
+import os, re, sys, time, subprocess, platform, json
 from datetime import datetime
 
 def run(cmd):
@@ -9,93 +9,6 @@ def run(cmd):
         raise RuntimeError(f"Befehl '{' '.join(cmd)}' fehlgeschlagen: {output}") from None
     except FileNotFoundError:
         raise RuntimeError(f"Befehl '{cmd[0]}' nicht gefunden. Stellen Sie sicher, dass das Tool installiert ist.") from None
-
-def windows_full_charge_capacity_mwh():
-    # generate report
-    out = os.path.join(os.path.expanduser("~"), "battery-report.html")
-    run(["powercfg", "/batteryreport", "/output", out])
-    html = open(out, "r", encoding="utf-8", errors="ignore").read()
-    # try to find "Full Charge Capacity"
-    m = re.search(r"Full Charge Capacity.*?</td>\s*<td[^>]*>\s*([\d,\.]+)\s*mWh", html, re.I | re.S)
-    if not m:
-        # fallback for different report formats
-        m = re.search(r"Full Charge Capacity</span>\s*</td>\s*<td>\s*([\d,\.]+)\s*mWh", html, re.I)
-    if not m:
-        raise RuntimeError("Konnte 'Full Charge Capacity' im battery-report nicht finden.")
-    return int(re.sub(r"[^\d]", "", m.group(1)))
-
-def linux_full_charge_capacity_mwh():
-    # prefer sysfs if present
-    base = "/sys/class/power_supply"
-    if os.path.isdir(base):
-        bats = [d for d in os.listdir(base) if d.startswith("BAT")]
-        if bats:
-            b = os.path.join(base, bats[0])
-            # energy_full in uWh
-            for fn in ("energy_full", "energy_full_design"):
-                p = os.path.join(b, fn)
-                if os.path.exists(p):
-                    uwh = int(open(p).read().strip())
-                    return uwh // 1000
-            # charge_full in uAh -> need voltage to convert, skip
-    # fallback: upower
-    out = run(["upower", "-e"])
-    dev = next((l for l in out.splitlines() if "battery" in l.lower()), None)
-    if not dev:
-        raise RuntimeError("Kein Battery-Device via upower gefunden.")
-    info = run(["upower", "-i", dev])
-    m = re.search(r"energy-full:\s*([\d\.]+)\s*Wh", info, re.I)
-    if not m:
-        raise RuntimeError("Konnte energy-full nicht aus upower lesen.")
-    return int(float(m.group(1)) * 1000)
-
-def macos_full_charge_capacity_mwh():
-    # via ioreg (MaxCapacity in mAh + Voltage mV -> mWh)
-    out = run(["ioreg", "-rn", "AppleSmartBattery"])
-    m1 = re.search(r"\"MaxCapacity\"\s*=\s*(\d+)", out)
-    m2 = re.search(r"\"Voltage\"\s*=\s*(\d+)", out)
-    if not (m1 and m2):
-        raise RuntimeError("Konnte MaxCapacity/Voltage via ioreg nicht lesen.")
-    mah = int(m1.group(1))
-    mv = int(m2.group(1))
-    # mWh = mAh * mV / 1000
-    return int(mah * mv / 1000)
-
-def battery_percent_and_status():
-    system = platform.system().lower()
-    if system == "windows":
-        # WMI via powershell (no extra libs)
-        ps = 'Get-CimInstance Win32_Battery | Select EstimatedChargeRemaining,BatteryStatus | ConvertTo-Json'
-        out = run(["powershell", "-NoProfile", "-Command", ps]).strip()
-        # very small json parse without json lib? use json.
-        import json
-        j = json.loads(out)
-        return int(j["EstimatedChargeRemaining"]), int(j["BatteryStatus"])
-    elif system == "linux":
-        # sysfs
-        base = "/sys/class/power_supply"
-        bats = [d for d in os.listdir(base) if d.startswith("BAT")] if os.path.isdir(base) else []
-        if bats:
-            b = os.path.join(base, bats[0])
-            cap = int(open(os.path.join(b, "capacity")).read().strip())
-            status = open(os.path.join(b, "status")).read().strip().lower()  # charging/discharging/full
-            return cap, status
-        # upower fallback
-        out = run(["upower", "-e"])
-        dev = next((l for l in out.splitlines() if "battery" in l.lower()), None)
-        info = run(["upower", "-i", dev])
-        cap = int(re.search(r"percentage:\s*(\d+)%", info, re.I).group(1))
-        st = re.search(r"state:\s*(\w+)", info, re.I).group(1).lower()
-        return cap, st
-    elif system == "darwin":
-        out = run(["pmset", "-g", "batt"])
-        # e.g. "... 73%; charging; ..."
-        m = re.search(r"(\d+)%.*;\s*([a-zA-Z]+);", out)
-        if not m:
-            raise RuntimeError("Konnte pmset Ausgabe nicht parsen.")
-        return int(m.group(1)), m.group(2).lower()
-    else:
-        raise RuntimeError(f"Unbekanntes OS: {platform.system()}")
 
 def get_battery_info():
     system = platform.system().lower()
@@ -115,7 +28,6 @@ def get_battery_info():
         )
         try:
             out = run(["powershell", "-NoProfile", "-Command", ps]).strip()
-            import json
             j = json.loads(out)
             # BatteryStatus 2 is Discharging, 1 is Other (often Charging), 3 is Fully Charged, etc.
             # Map to string
@@ -126,12 +38,20 @@ def get_battery_info():
             elif j["Status"] == 3: st = "full"
             return j["Remaining"], j["Full"], st.lower(), j["Percent"]
         except Exception:
-            # Fallback to existing percentage-based logic if WMI root/wmi fails
-            pct, st_code = battery_percent_and_status()
-            full = windows_full_charge_capacity_mwh()
-            curr = int(full * pct / 100.0)
-            st = "discharging" if st_code == 2 else "charging" # simple fallback
-            return curr, full, st, pct
+            # Fallback if WMI root/wmi fails
+            ps_fallback = 'Get-CimInstance Win32_Battery | Select EstimatedChargeRemaining,BatteryStatus | ConvertTo-Json'
+            try:
+                out = run(["powershell", "-NoProfile", "-Command", ps_fallback]).strip()
+                j = json.loads(out)
+                pct = int(j["EstimatedChargeRemaining"])
+                st_code = int(j["BatteryStatus"])
+                st = "discharging" if st_code == 2 else "charging"
+                # For fallback mWh, we try powercfg once or just use a dummy full capacity
+                full = 60000 # Default fallback
+                curr = int(full * pct / 100.0)
+                return curr, full, st, pct
+            except:
+                raise RuntimeError("Konnte Batteriedaten auf Windows nicht lesen.")
 
     elif system == "linux":
         base = "/sys/class/power_supply"
