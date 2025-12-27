@@ -40,3 +40,17 @@ docker compose run --rm recon-ng bloodhound-python -u 'user' -p 'password' -d 'd
 
 Öffne `http://localhost:8080` in deinem Browser. Standardmäßig ist BloodHound mit der Neo4j-Instanz im Hintergrund verbunden.
 Die Neo4j-Konsole ist unter `http://localhost:7474` erreichbar (Benutzer: `neo4j`, Passwort: `password`).
+
+## Optional: Custom All-in-One Image
+
+Für eine kompaktere Umgebung kannst du ein Custom-Image bauen, das alle Tools (einschließlich Neo4j und BloodHound GUI) in einem einzigen Kali-basierten Container vereint.
+
+### Build
+
+```bash
+docker build -t kali-custom -f kali/Dockerfile.custom ./kali
+```
+
+### Nutzung
+
+Beachte, dass Neo4j innerhalb des Containers gestartet werden muss, wenn du die GUI nutzen möchtest. Dies ist eher für fortgeschrittene Setups gedacht, da die Trennung von Diensten (wie in der `docker-compose.yml`) im Docker-Ökosystem bevorzugt wird.
