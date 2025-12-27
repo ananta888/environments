@@ -2,7 +2,7 @@ FROM kalilinux/kali-rolling:latest
 
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      recon-ng ca-certificates git python3-pip \
+      recon-ng ca-certificates git python3-pip theharvester bloodhound.py \
  && python3 -m pip install --no-cache-dir --break-system-packages \
       shodan beautifulsoup4 cryptography censys PyPDF3 \
  && apt-get clean \

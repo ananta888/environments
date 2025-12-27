@@ -3,6 +3,7 @@
         "SOURCE": "8.8.8.8"
     },
     "recon/netblocks-hosts/shodan_net": {
-        "SOURCE": "8.8.8.0/24"
+        "SOURCE": "8.8.8.0/24",
+        "LIMIT": 1
     }
 }
