@@ -62,7 +62,7 @@ services:
     image: specterops/bloodhound:latest
     container_name: bloodhound
     ports:
-      - "8080:8080"
+      - "8082:8080"
     volumes:
       - ./bloodhound/config.json:/bloodhound.config.json
     depends_on:
