@@ -1,0 +1,9 @@
+{
+    "recon/hosts-ports/shodan_ip": {
+        "SOURCE": "8.8.8.8"
+    },
+    "recon/netblocks-hosts/shodan_net": {
+        "SOURCE": "8.8.8.0/24",
+        "LIMIT": 1
+    }
+}
