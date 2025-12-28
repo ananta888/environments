@@ -27,10 +27,12 @@ services:
       - /tmp
       - /run
       - /var/tmp
-    cap_drop:
-      - ALL
+    cap_add:
+      - NET_RAW
+      - NET_ADMIN
     networks:
       - recon_net
+      - lab_network
 
   neo4j:
     image: neo4j:4.4
@@ -83,6 +85,8 @@ services:
 
 networks:
   recon_net: {}
+  lab_network:
+    external: true
 
 volumes:
   postgres_data:

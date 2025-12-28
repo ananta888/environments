@@ -26,5 +26,5 @@ services:
 
 networks:
   lab:
+    name: lab_network
     driver: bridge
-    internal: true
