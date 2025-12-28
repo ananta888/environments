@@ -4,6 +4,7 @@ FROM kalilinux/kali-rolling:latest
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       recon-ng \
+      nmap \
       theharvester \
       bloodhound \
       neo4j \
