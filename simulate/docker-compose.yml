@@ -1,0 +1,30 @@
+services:
+  web:
+    image: nginx:alpine
+    networks: [lab]
+
+  ssh:
+    image: linuxserver/openssh-server
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PASSWORD_ACCESS=true
+      - USER_NAME=test
+      - USER_PASSWORD=test1234
+    networks: [lab]
+
+  db:
+    image: mariadb:11
+    environment:
+      - MARIADB_ROOT_PASSWORD=rootpw
+    networks: [lab]
+
+  nmap:
+    image: instrumentisto/nmap
+    entrypoint: ["sleep","infinity"]
+    networks: [lab]
+
+networks:
+  lab:
+    driver: bridge
+    internal: true
