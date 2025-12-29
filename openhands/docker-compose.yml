@@ -1,24 +1,29 @@
+version: "3.8"
+
 services:
   openhands:
     image: docker.openhands.dev/openhands/openhands:1.0
     container_name: openhands
+    user: "0:0"
     ports:
       - "3000:3000"
     environment:
-      SANDBOX_RUNTIME_CONTAINER_IMAGE: docker.openhands.dev/openhands/runtime:1.0-nikolaik
+      APP_BASE_URL: "http://localhost:3000"
       LOG_ALL_EVENTS: "true"
-      APP_BASE_URL: http://localhost:3000
-      SANDBOX_USER_ID: 1000
-      SANDBOX_VOLUMES: ./:/workspace:rw
+      SANDBOX_RUNTIME_CONTAINER_IMAGE: "docker.openhands.dev/openhands/runtime:1.0-nikolaik"
+
+      # POSIX-PFAD (Windows C:\... geht NICHT)
+      SANDBOX_VOLUMES: "/mnt/c/Users/stuib/PycharmProjects/environments/openhands:/workspace:rw"
+
+      JWT_SECRET: "dev-local-secret"
+      SANDBOX_USER_ID: "0"
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - openhands_state:/.openhands
-      - ./:/workspace
+      - "/mnt/c/Users/stuib/PycharmProjects/environments/openhands:/workspace"
+
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:172.17.0.1"
       - "lmstudio:host-gateway"
 
     restart: unless-stopped
-
-volumes:
-  openhands_state:
