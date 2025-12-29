@@ -1,13 +1,12 @@
 services:
   openhands:
     image: docker.openhands.dev/openhands/openhands:1.0
-    container_name: openhands
-    pull_policy: always
     ports:
       - "3000:3000"
     environment:
       SANDBOX_RUNTIME_CONTAINER_IMAGE: docker.openhands.dev/openhands/runtime:1.0-nikolaik
       LOG_ALL_EVENTS: "true"
+      APP_BASE_URL: http://localhost:3000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - openhands_state:/.openhands
