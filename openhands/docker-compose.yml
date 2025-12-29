@@ -1,17 +1,23 @@
 services:
   openhands:
     image: docker.openhands.dev/openhands/openhands:1.0
+    container_name: openhands
     ports:
       - "3000:3000"
     environment:
       SANDBOX_RUNTIME_CONTAINER_IMAGE: docker.openhands.dev/openhands/runtime:1.0-nikolaik
       LOG_ALL_EVENTS: "true"
       APP_BASE_URL: http://localhost:3000
+      SANDBOX_USER_ID: 1000
+      SANDBOX_VOLUMES: ./:/workspace:rw
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - openhands_state:/.openhands
+      - ./:/workspace
     extra_hosts:
       - "host.docker.internal:host-gateway"
+      - "lmstudio:host-gateway"
+
     restart: unless-stopped
 
 volumes:
